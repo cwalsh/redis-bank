@@ -37,27 +37,27 @@ describe Money::Bank::RedisBank do
           expect { bank.exchange_with(Money.new(100, 'USD'), 'JPY') }.to raise_exception(Money::Bank::UnknownRate)
         end
 
-        it "accepts a custom truncation method" do
+        it "accepts a custom rounding method" do
           proc = Proc.new { |n| n.ceil }
           bank.exchange_with(Money.new(10, 'USD'), 'EUR', &proc).should == Money.new(14, 'EUR')
         end
       end
     end
 
-    context "with &block" do
+    context "with a pre-configured rounding method" do
       let(:bank) {
-        proc = Proc.new { |n| n.ceil }
-        Money::Bank::RedisBank.new(Hash.new,&proc).tap do |bank|
+        rounding_method = Proc.new { |n| n.ceil }
+        Money::Bank::RedisBank.new(Hash.new,&rounding_method).tap do |bank|
           bank.add_rate('USD', 'EUR', 1.33)
         end
       }
 
       describe "#exchange_with" do
-        it "uses the stored truncation method" do
+        it "uses the stored rounding method" do
           bank.exchange_with(Money.new(10, 'USD'), 'EUR').should == Money.new(14, 'EUR')
         end
 
-        it "accepts a custom truncation method" do
+        it "accepts a custom rounding method" do
           proc = Proc.new { |n| n.ceil + 1 }
           bank.exchange_with(Money.new(10, 'USD'), 'EUR', &proc).should == Money.new(15, 'EUR')
         end
