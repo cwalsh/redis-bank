@@ -6,6 +6,7 @@ Gem::Specification.new do |s|
   s.has_rdoc = true
   s.files = %w(
     README.md
+    LICENSE.txt
     init.rb
     lib/redis-bank.rb
   )
