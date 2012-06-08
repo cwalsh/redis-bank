@@ -1,5 +1,7 @@
 require 'rspec/core/rake_task'
 require 'rdoc/task'
+require 'bundler'
+Bundler::GemHelper.install_tasks
 
 desc "Default Task (specs)"
 task :default => [ :spec ]
