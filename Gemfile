@@ -1,8 +1,3 @@
-gem 'rake'
-gem 'money'
-gem 'redis'
+source "http://rubygems.org"
 
-group :development, :test do
-  gem 'rspec'
-  gem 'rdoc'
-end
+gemspec
