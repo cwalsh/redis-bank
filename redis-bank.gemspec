@@ -11,8 +11,11 @@ Gem::Specification.new do |s|
     lib/redis-bank.rb
   )
   s.add_runtime_dependency 'money'
+  s.add_development_dependency 'money'
+  s.add_development_dependency 'rake'
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'rcov'
+  s.add_development_dependency 'rdoc'
 
   s.require_path = 'lib'
   s.authors = ["Cameron Walsh"]
