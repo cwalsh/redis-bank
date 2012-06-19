@@ -134,7 +134,7 @@ describe Money::Bank::RedisBank do
 
   describe "#rates" do
     it "gets all the exchange rates" do
-      known_rates = %w(exchange_rate_AUD_TO_USD exchange_rate_USD_TO_AUD)
+      known_rates = %w(exchange_rate_aud_to_usd exchange_rate_usd_to_aud)
       client.should_receive(:keys).with("exchange_rate_*").and_return known_rates
       client.should_receive(:mapped_mget).with(*known_rates)
       subject.rates
