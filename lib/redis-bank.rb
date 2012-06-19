@@ -31,7 +31,7 @@ class Money
 
       # hash of exchange rates
       def rates
-        @redis_client.mapped_mget *@redis_client.keys("EXCHANGE_RATE_*")
+        @redis_client.mapped_mget *@redis_client.keys("exchange_rate_*")
       end
 
       # Exchanges the given +Money+ object to a new +Money+ object in
@@ -148,9 +148,9 @@ class Money
       # @return [String]
       #
       # @example
-      #   rate_key_for("USD", "CAD") #=> "USD_TO_CAD"
+      #   rate_key_for("USD", "CAD") #=> "exchange_rate_usd_to_cad"
       def rate_key_for(from, to)
-        "EXCHANGE_RATE_#{Currency.wrap(from).iso_code}_TO_#{Currency.wrap(to).iso_code}".upcase
+        "EXCHANGE_RATE_#{Currency.wrap(from).iso_code}_TO_#{Currency.wrap(to).iso_code}".downcase
       end
     end
   end

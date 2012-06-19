@@ -121,10 +121,10 @@ describe Money::Bank::RedisBank do
     end
 
     it "returns a hashkey based on the passed arguments" do
-      subject.send(:rate_key_for, 'USD', 'EUR').should == 'EXCHANGE_RATE_USD_TO_EUR'
-      subject.send(:rate_key_for, Money::Currency.wrap('USD'), 'EUR').should == 'EXCHANGE_RATE_USD_TO_EUR'
-      subject.send(:rate_key_for, 'USD', Money::Currency.wrap('EUR')).should == 'EXCHANGE_RATE_USD_TO_EUR'
-      subject.send(:rate_key_for, Money::Currency.wrap('USD'), Money::Currency.wrap('EUR')).should == 'EXCHANGE_RATE_USD_TO_EUR'
+      subject.send(:rate_key_for, 'USD', 'EUR').should == 'exchange_rate_usd_to_eur'
+      subject.send(:rate_key_for, Money::Currency.wrap('USD'), 'EUR').should == 'exchange_rate_usd_to_eur'
+      subject.send(:rate_key_for, 'USD', Money::Currency.wrap('EUR')).should == 'exchange_rate_usd_to_eur'
+      subject.send(:rate_key_for, Money::Currency.wrap('USD'), Money::Currency.wrap('EUR')).should == 'exchange_rate_usd_to_eur'
     end
 
     it "raises a Money::Currency::UnknownCurrency exception when an unknown currency is passed" do
@@ -134,8 +134,8 @@ describe Money::Bank::RedisBank do
 
   describe "#rates" do
     it "gets all the exchange rates" do
-      known_rates = %w(EXCHANGE_RATE_AUD_TO_USD EXCHANGE_RATE_USD_TO_AUD)
-      client.should_receive(:keys).with("EXCHANGE_RATE_*").and_return known_rates
+      known_rates = %w(exchange_rate_AUD_TO_USD exchange_rate_USD_TO_AUD)
+      client.should_receive(:keys).with("exchange_rate_*").and_return known_rates
       client.should_receive(:mapped_mget).with(*known_rates)
       subject.rates
     end
