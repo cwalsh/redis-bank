@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'rcov'
   s.add_development_dependency 'yard'
+  s.add_development_dependency 'redis'
 
   s.require_path = 'lib'
   s.authors = ["Cameron Walsh"]
