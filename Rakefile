@@ -1,8 +1,8 @@
 require 'bundler'
 Bundler::GemHelper.install_tasks
 require 'rspec/core/rake_task'
-require 'rdoc/task'
 require 'rcov/rcovtask'
+require 'yard'
 
 desc "Default Task (specs)"
 task :default => [ :spec ]
@@ -16,9 +16,6 @@ Rcov::RcovTask.new do |t|
   t.verbose = true
 end
 
-Rake::RDocTask.new { |rdoc|
-  rdoc.rdoc_dir = 'doc'
-  rdoc.title    = "Redis Bank"
-  rdoc.rdoc_files.include('README.md')
-  rdoc.rdoc_files.include('lib/**/*.rb')
-}
+YARD::Rake::YardocTask.new do |t|
+  t.options << "--files" << "README.md"
+end

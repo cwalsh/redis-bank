@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.version = '0.0.2'
   s.summary = 'Redis-backed Bank for the Money gem'
   s.description = 'Redis-backed Bank for the Money gem based on the VariableExchangeBank'
-  s.has_rdoc = true
+  s.has_rdoc = 'yard'
   s.files = %w(
     README.md
     LICENSE.txt
@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rake'
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'rcov'
-  s.add_development_dependency 'rdoc'
+  s.add_development_dependency 'yard'
 
   s.require_path = 'lib'
   s.authors = ["Cameron Walsh"]

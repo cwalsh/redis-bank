@@ -1,7 +1,9 @@
 Redis-Bank
 ==========
 
-A Redis-backed bank for the Money gem.
+A Redis-backed Bank for the {https://github.com/RubyMoney/money Money} gem.
+
+See {Money::Bank::RedisBank} for details.
 
 Usage
 -----

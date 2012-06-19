@@ -4,3 +4,5 @@ pkg
 Gemfile.lock
 redis-bank-*.gem
 .rvmrc
+*.swp
+.yardoc
