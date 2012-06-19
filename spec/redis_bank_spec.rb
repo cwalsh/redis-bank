@@ -2,7 +2,8 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe Money::Bank::RedisBank do
 
-  subject { Money::Bank::RedisBank.new(Hash.new) }
+  let(:client) { Hash.new }
+  subject { Money::Bank::RedisBank.new(client) }
 
   describe "#initialize" do
     context "without &block" do
@@ -120,14 +121,23 @@ describe Money::Bank::RedisBank do
     end
 
     it "returns a hashkey based on the passed arguments" do
-      subject.send(:rate_key_for, 'USD', 'EUR').should == 'USD_TO_EUR'
-      subject.send(:rate_key_for, Money::Currency.wrap('USD'), 'EUR').should == 'USD_TO_EUR'
-      subject.send(:rate_key_for, 'USD', Money::Currency.wrap('EUR')).should == 'USD_TO_EUR'
-      subject.send(:rate_key_for, Money::Currency.wrap('USD'), Money::Currency.wrap('EUR')).should == 'USD_TO_EUR'
+      subject.send(:rate_key_for, 'USD', 'EUR').should == 'EXCHANGE_RATE_USD_TO_EUR'
+      subject.send(:rate_key_for, Money::Currency.wrap('USD'), 'EUR').should == 'EXCHANGE_RATE_USD_TO_EUR'
+      subject.send(:rate_key_for, 'USD', Money::Currency.wrap('EUR')).should == 'EXCHANGE_RATE_USD_TO_EUR'
+      subject.send(:rate_key_for, Money::Currency.wrap('USD'), Money::Currency.wrap('EUR')).should == 'EXCHANGE_RATE_USD_TO_EUR'
     end
 
     it "raises a Money::Currency::UnknownCurrency exception when an unknown currency is passed" do
       expect { subject.send(:rate_key_for, 'AAA', 'BBB')}.should raise_exception(Money::Currency::UnknownCurrency)
+    end
+  end
+
+  describe "#rates" do
+    it "gets all the exchange rates" do
+      known_rates = %w(EXCHANGE_RATE_AUD_TO_USD EXCHANGE_RATE_USD_TO_AUD)
+      client.should_receive(:keys).with("EXCHANGE_RATE_*").and_return known_rates
+      client.should_receive(:mapped_mget).with(*known_rates)
+      subject.rates
     end
   end
 
