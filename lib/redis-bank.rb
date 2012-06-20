@@ -150,7 +150,7 @@ class Money
       # @return [String]
       #
       # @example
-      #   rate_key_for("USD", "CAD") #=> "exchange_rate_usd_to_cad"
+      #   rate_key_for("USD", "CAD") #=> "usd_to_cad"
       def rate_key_for(from, to)
         "#{Currency.wrap(from).iso_code}_to_#{Currency.wrap(to).iso_code}".downcase
       end
