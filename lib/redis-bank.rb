@@ -5,6 +5,8 @@ class Money
     # Thrown when an unknown rate format is requested.
     class UnknownRateFormat < StandardError; end
 
+    KEY='redis_bank_exchange_rates'
+
     # Class for aiding in exchanging money between different currencies. By
     # default, the +Money+ class uses an object of this class (accessible
     # through +Money#bank+) for performing currency exchanges.
@@ -31,7 +33,7 @@ class Money
 
       # hash of exchange rates
       def rates
-        @redis_client.mapped_mget *@redis_client.keys("exchange_rate_*")
+        @redis_client.hgetall KEY
       end
 
       # Exchanges the given +Money+ object to a new +Money+ object in
@@ -118,7 +120,7 @@ class Money
       #   bank.set_rate("USD", "CAD", 1.24515)
       #   bank.set_rate("CAD", "USD", 0.803115)
       def set_rate(from, to, rate)
-        @redis_client[rate_key_for(from, to)] = rate
+        @redis_client.hset KEY, rate_key_for(from, to), rate
       end
 
       # Retrieve the rate for the given currencies. Uses +Mutex+ to synchronize
@@ -137,7 +139,7 @@ class Money
       #   bank.get_rate("USD", "CAD") #=> 1.24515
       #   bank.get_rate("CAD", "USD") #=> 0.803115
       def get_rate(from, to)
-        @redis_client[rate_key_for(from, to)]
+        @redis_client.hget KEY, rate_key_for(from, to)
       end
 
       # Return the rate hashkey for the given currencies.
@@ -150,7 +152,7 @@ class Money
       # @example
       #   rate_key_for("USD", "CAD") #=> "exchange_rate_usd_to_cad"
       def rate_key_for(from, to)
-        "EXCHANGE_RATE_#{Currency.wrap(from).iso_code}_TO_#{Currency.wrap(to).iso_code}".downcase
+        "#{Currency.wrap(from).iso_code}_to_#{Currency.wrap(to).iso_code}".downcase
       end
     end
   end

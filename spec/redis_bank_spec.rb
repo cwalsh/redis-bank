@@ -2,13 +2,25 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe Money::Bank::RedisBank do
 
-  let(:client) { Hash.new }
+  let(:client) do
+    Hash.new.tap do |fake_redis_client|
+      def fake_redis_client.hset(k,f,v)
+        self[f]=v
+      end
+      def fake_redis_client.hget(k,f)
+        self[f]
+      end
+      def fake_redis_client.hgetall(k)
+        self
+      end
+    end
+  end
   subject { Money::Bank::RedisBank.new(client) }
 
   describe "#initialize" do
     context "without &block" do
       let(:bank) {
-        Money::Bank::RedisBank.new(Hash.new).tap do |bank|
+        Money::Bank::RedisBank.new(client).tap do |bank|
           bank.add_rate('USD', 'EUR', 1.33)
         end
       }
@@ -48,7 +60,7 @@ describe Money::Bank::RedisBank do
     context "with a pre-configured rounding method" do
       let(:bank) {
         rounding_method = Proc.new { |n| n.ceil }
-        Money::Bank::RedisBank.new(Hash.new,&rounding_method).tap do |bank|
+        Money::Bank::RedisBank.new(client,&rounding_method).tap do |bank|
           bank.add_rate('USD', 'EUR', 1.33)
         end
       }
@@ -121,10 +133,10 @@ describe Money::Bank::RedisBank do
     end
 
     it "returns a hashkey based on the passed arguments" do
-      subject.send(:rate_key_for, 'USD', 'EUR').should == 'exchange_rate_usd_to_eur'
-      subject.send(:rate_key_for, Money::Currency.wrap('USD'), 'EUR').should == 'exchange_rate_usd_to_eur'
-      subject.send(:rate_key_for, 'USD', Money::Currency.wrap('EUR')).should == 'exchange_rate_usd_to_eur'
-      subject.send(:rate_key_for, Money::Currency.wrap('USD'), Money::Currency.wrap('EUR')).should == 'exchange_rate_usd_to_eur'
+      subject.send(:rate_key_for, 'USD', 'EUR').should == 'usd_to_eur'
+      subject.send(:rate_key_for, Money::Currency.wrap('USD'), 'EUR').should == 'usd_to_eur'
+      subject.send(:rate_key_for, 'USD', Money::Currency.wrap('EUR')).should == 'usd_to_eur'
+      subject.send(:rate_key_for, Money::Currency.wrap('USD'), Money::Currency.wrap('EUR')).should == 'usd_to_eur'
     end
 
     it "raises a Money::Currency::UnknownCurrency exception when an unknown currency is passed" do
@@ -134,10 +146,9 @@ describe Money::Bank::RedisBank do
 
   describe "#rates" do
     it "gets all the exchange rates" do
-      known_rates = %w(exchange_rate_aud_to_usd exchange_rate_usd_to_aud)
-      client.should_receive(:keys).with("exchange_rate_*").and_return known_rates
-      client.should_receive(:mapped_mget).with(*known_rates)
-      subject.rates
+      subject.add_rate("USD", "EUR", 0.788332676)
+      subject.add_rate("EUR", "YEN", 122.631477)
+      subject.rates.should == {"usd_to_eur" => 0.788332676, "eur_to_jpy" => 122.631477 }
     end
   end
 

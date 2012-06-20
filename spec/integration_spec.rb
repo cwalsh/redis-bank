@@ -12,7 +12,7 @@ describe "Redis-Bank actually talking to a redis client" do
       subject.get_rate("USD", "AUD").should == "1.23"
     end
     it "has a list of stored exchange rates" do
-      subject.rates.should == {"exchange_rate_usd_to_aud" => "1.23", "exchange_rate_usd_to_cad" => "2.34"}
+      subject.rates.should == {"usd_to_aud" => "1.23", "usd_to_cad" => "2.34"}
     end
     it "converts currencies" do
       Money.default_bank = subject
