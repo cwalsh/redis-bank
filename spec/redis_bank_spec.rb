@@ -13,6 +13,10 @@ describe Money::Bank::RedisBank do
       def fake_redis_client.hgetall(k)
         self
       end
+      def fake_redis_client.mapped_hmset(k,hsh)
+        self.clear
+        hsh.each {|k,v| self[k]=v}
+      end
     end
   end
   subject { Money::Bank::RedisBank.new(client) }
@@ -140,7 +144,7 @@ describe Money::Bank::RedisBank do
     end
 
     it "raises a Money::Currency::UnknownCurrency exception when an unknown currency is passed" do
-      expect { subject.send(:rate_key_for, 'AAA', 'BBB')}.should raise_exception(Money::Currency::UnknownCurrency)
+      expect { subject.send(:rate_key_for, 'AAA', 'BBB') }.to raise_exception(Money::Currency::UnknownCurrency)
     end
   end
 
@@ -152,4 +156,74 @@ describe Money::Bank::RedisBank do
     end
   end
 
+  describe "fallbacks" do
+    let(:forgetful_client) { client }
+    let(:bad_bank) { Money::Bank::RedisBank.new(forgetful_client) }
+
+    context "when all the rates are missing" do
+      before :each do
+        bad_bank.rates.should == {}
+        bad_bank.set_fallback(true) { {"gbp_to_aud" => 1.75 } }
+      end
+      it "gets the exchange rates from the fallback" do
+        bad_bank.rates.should == {"gbp_to_aud" => 1.75 }
+      end
+      it "sets the exchange rates from the fallback" do
+        forgetful_client.should_receive(:mapped_hmset)
+        bad_bank.rates.should == {"gbp_to_aud" => 1.75 }
+      end
+    end
+    context "when some of the rates are missing" do
+      before :each do
+        forgetful_client.clear
+        bad_bank.set_fallback(true) { {"gbp_to_aud" => 1.75 } }
+        Money.default_bank = bad_bank
+      end
+      it "gets the missing exchange rate from the fallback" do
+        Money.new(1000, "GBP").exchange_to("AUD").should == Money.new(1750, "AUD")
+      end
+      context "with writethrough" do
+        it "sets the missing exchange rate from the fallback" do
+          forgetful_client.should_receive(:mapped_hmset)
+          Money.new(1000, "GBP").exchange_to("AUD").should == Money.new(1750, "AUD")
+        end
+      end
+      context "without writethrough" do
+        it "sets the missing exchange rate from the fallback" do
+          bad_bank.set_fallback(false) { {"gbp_to_aud" => 1.75 } }
+          forgetful_client.should_not_receive(:mapped_hmset)
+          Money.new(1000, "GBP").exchange_to("AUD").should == Money.new(1750, "AUD")
+        end
+      end
+    end
+  end
+  describe "error handling" do
+    let(:unstable_client) { client }
+    let(:bad_bank) { Money::Bank::RedisBank.new(unstable_client) }
+    context "with fallbacks" do
+      before :each do
+        bad_bank.set_fallback(false) { {"jpy_to_aud" => 0.00123} }
+        Money.default_bank = bad_bank
+      end
+      it "falls back to the fallback proc when exchanging currencies" do
+        unstable_client.should_receive(:hget).and_raise Redis::CannotConnectError
+        Money.new(1000, "JPY").exchange_to("AUD").should == Money.new(123, "AUD")
+      end
+      it "falls back to the fallback proc when requesting rates" do
+        unstable_client.should_receive(:hgetall).and_raise Redis::CannotConnectError
+        bad_bank.rates.should == {"jpy_to_aud" => 0.00123}
+      end
+    end
+    context "without fallbacks" do
+      it "fails as usual when trying to exchange currencies" do
+        Money.default_bank = bad_bank
+        unstable_client.should_receive(:hget).and_raise Redis::CannotConnectError
+        expect { Money.new(1000, "JPY").exchange_to "AUD" }.to raise_error Redis::CannotConnectError
+      end
+      it "fails as usual when getting rates" do
+        unstable_client.should_receive(:hgetall).and_raise Redis::CannotConnectError
+        expect { bad_bank.rates }.to raise_error Redis::CannotConnectError
+      end
+    end
+  end
 end
