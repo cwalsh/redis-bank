@@ -106,8 +106,7 @@ class Money
         set_rate(from, to, rate)
       end
 
-      # Set the rate for the given currencies. Uses +Mutex+ to synchronize data
-      # access.
+      # Set the rate for the given currencies.
       #
       # @param [Currency, String, Symbol] from Currency to exchange from.
       # @param [Currency, String, Symbol] to Currency to exchange to.
@@ -122,9 +121,6 @@ class Money
       def set_rate(from, to, rate)
         @redis_client.hset KEY, rate_key_for(from, to), rate
       end
-
-      # Retrieve the rate for the given currencies. Uses +Mutex+ to synchronize
-      # data access.
       #
       # @param [Currency, String, Symbol] from Currency to exchange from.
       # @param [Currency, String, Symbol] to Currency to exchange to.
