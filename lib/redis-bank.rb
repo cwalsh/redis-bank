@@ -6,8 +6,6 @@ class Money
     # Thrown when an unknown rate format is requested.
     class UnknownRateFormat < StandardError; end
 
-    KEY='redis_bank_exchange_rates'
-
     # Class for aiding in exchanging money between different currencies. By
     # default, the +Money+ class uses an object of this class (accessible
     # through +Money#bank+) for performing currency exchanges.
@@ -26,6 +24,7 @@ class Money
     #   # Exchange 100 CAD to USD:
     #   bank.exchange_with(c2, "USD") #=> #<Money @cents=803115>
     class RedisBank < Base
+      KEY='redis_bank_exchange_rates'
 
       def initialize(redis_client, &block)
         super(&block)
