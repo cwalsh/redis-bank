@@ -1,11 +1,10 @@
 require 'money/bank/base'
+require 'active_support/core_ext'
 
 class Money
   module Bank
     # Thrown when an unknown rate format is requested.
     class UnknownRateFormat < StandardError; end
-
-    KEY='redis_bank_exchange_rates'
 
     # Class for aiding in exchanging money between different currencies. By
     # default, the +Money+ class uses an object of this class (accessible
@@ -25,15 +24,47 @@ class Money
     #   # Exchange 100 CAD to USD:
     #   bank.exchange_with(c2, "USD") #=> #<Money @cents=803115>
     class RedisBank < Base
+      KEY='redis_bank_exchange_rates'
 
       def initialize(redis_client, &block)
         super(&block)
         @redis_client = redis_client
       end
 
+      # This allows the user to define a method of obtaining exchange rates
+      # should they not exist in redis.
+      # Once the new set of rates is obtained, it is stored in redis if
+      # write_through is set to true.
+      #
+      # @example
+      #   bank = Money::Bank::RedisBank.new redis_client
+      #   bank.set_fallback(true) { {"gbp_to_aud" => rand, "jpy_to_aud" => rand} }
+      #   bank.rates # => {"gbp_to_aud"=>"1.75", "jpy_to_aud"=>"0.002"}
+      #   redis_client.del "redis_bank_exchange_rates" # Oops!
+      #   bank.rates # => {"gbp_to_aud"=>"0.861522064707917",
+      #                    "jpy_to_aud"=>"0.552042440462882"}
+      #
+      def set_fallback(write_through, &block)
+        @write_through = write_through
+        @fallback = block
+      end
+
       # hash of exchange rates
       def rates
-        @redis_client.hgetall KEY
+        begin
+          rates = @redis_client.hgetall KEY
+          if rates.blank? && @fallback
+            rates = @fallback.call
+            @redis_client.mapped_hmset KEY, rates if @write_through
+          end
+          rates
+        rescue
+          if @fallback
+            @fallback.call
+          else
+            raise
+          end
+        end
       end
 
       # Exchanges the given +Money+ object to a new +Money+ object in
@@ -103,11 +134,10 @@ class Money
       #   bank.add_rate("USD", "CAD", 1.24515)
       #   bank.add_rate("CAD", "USD", 0.803115)
       def add_rate(from, to, rate)
-        set_rate(from, to, rate)
+        set_rate from, to, rate
       end
 
-      # Set the rate for the given currencies. Uses +Mutex+ to synchronize data
-      # access.
+      # Set the rate for the given currencies.
       #
       # @param [Currency, String, Symbol] from Currency to exchange from.
       # @param [Currency, String, Symbol] to Currency to exchange to.
@@ -122,9 +152,6 @@ class Money
       def set_rate(from, to, rate)
         @redis_client.hset KEY, rate_key_for(from, to), rate
       end
-
-      # Retrieve the rate for the given currencies. Uses +Mutex+ to synchronize
-      # data access.
       #
       # @param [Currency, String, Symbol] from Currency to exchange from.
       # @param [Currency, String, Symbol] to Currency to exchange to.
@@ -139,7 +166,22 @@ class Money
       #   bank.get_rate("USD", "CAD") #=> 1.24515
       #   bank.get_rate("CAD", "USD") #=> 0.803115
       def get_rate(from, to)
-        @redis_client.hget KEY, rate_key_for(from, to)
+        begin
+          rate = @redis_client.hget KEY, rate_key_for(from, to)
+          if rate.blank? && @fallback
+            rates = @fallback.call
+            rate = rates[rate_key_for(from, to)]
+            @redis_client.mapped_hmset KEY, rates if @write_through
+          end
+          rate
+        rescue
+          if @fallback
+            rates = @fallback.call
+            rate = rates[rate_key_for(from, to)]
+          else
+            raise
+          end
+        end
       end
 
       # Return the rate hashkey for the given currencies.
