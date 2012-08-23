@@ -166,6 +166,9 @@ class Money
       #   bank.get_rate("USD", "CAD") #=> 1.24515
       #   bank.get_rate("CAD", "USD") #=> 0.803115
       def get_rate(from, to)
+        from = from.downcase.strip if from.is_a? String
+        to = to.downcase.strip if to.is_a? String
+        return 1.0 if from == to
         begin
           rate = @redis_client.hget KEY, rate_key_for(from, to)
           if rate.blank? && @fallback

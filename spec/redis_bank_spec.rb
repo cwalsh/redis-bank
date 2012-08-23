@@ -114,6 +114,20 @@ describe Money::Bank::RedisBank do
       subject.get_rate('USD', 'EUR').should == 1.25
     end
 
+    context "has same currency for source and detination" do
+      it "returns 1.0" do
+        subject.get_rate('AUD', 'AUD').should == 1.0
+      end
+
+      it "is case-insensitive" do
+        subject.get_rate('aud', 'AUD').should == 1.0
+      end
+
+      it "ignores leading and trailing spaces" do
+        subject.get_rate(' AUD', 'AUD ').should == 1.0
+      end
+    end
+
     it "raises an UnknownCurrency exception when an unknown currency is passed" do
       expect { subject.get_rate('AAA', 'BBB') }.to raise_exception(Money::Currency::UnknownCurrency)
     end
