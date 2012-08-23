@@ -168,7 +168,7 @@ class Money
       def get_rate(from, to)
         from = from.downcase.strip if from.is_a? String
         to = to.downcase.strip if to.is_a? String
-        return 1.0 if from == to
+        return 1 if from == to
         begin
           rate = @redis_client.hget KEY, rate_key_for(from, to)
           if rate.blank? && @fallback
